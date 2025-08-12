@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Pendaftaran Peserta Jalan Sehat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+        .action-btn {
+            background: #ff9800;
+            padding: 5px 8px;
+            margin: 2px;
+        }
+        .delete-btn {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Form Pendaftaran Jalan Sehat</h2>
+<form id="formPendaftaran">
+    <input type="text" id="nama" placeholder="Nama" required>
+    <input type="text" id="alamat" placeholder="Alamat" required>
+    <input type="text" id="nik" placeholder="Nomor Induk Kependudukan (NIK)" required>
+    <input type="text" id="instansi" placeholder="Asal Instansi" required>
+    <input type="number" id="kupon" placeholder="Jumlah Kupon" required>
+    <button type="submit">Daftar</button>
+    <button type="button" id="exportBtn">Export ke Excel</button>
+</form>
+
+<table id="tabelPeserta">
+    <thead>
+        <tr>
+            <th>Nama</th>
+            <th>Alamat</th>
+            <th>NIK</th>
+            <th>Instansi</th>
+            <th>Kupon</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+    let pesertaList = JSON.parse(localStorage.getItem("pesertaList")) || [];
+    let editIndex = null;
+
+    const form = document.getElementById("formPendaftaran");
+    const tabelPeserta = document.querySelector("#tabelPeserta tbody");
+
+    function renderTable() {
+        tabelPeserta.innerHTML = "";
+        pesertaList.forEach((peserta, index) => {
+            const row = `<tr>
+                <td>${peserta.nama}</td>
+                <td>${peserta.alamat}</td>
+                <td>${peserta.nik}</td>
+                <td>${peserta.instansi}</td>
+                <td>${peserta.kupon}</td>
+                <td>
+                    <button class="action-btn" onclick="editPeserta(${index})">Edit</button>
+                    <button class="action-btn delete-btn" onclick="hapusPeserta(${index})">Hapus</button>
+                </td>
+            </tr>`;
+            tabelPeserta.innerHTML += row;
+        });
+    }
+
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const nama = document.getElementById("nama").value.trim();
+        const alamat = document.getElementById("alamat").value.trim();
+        const nik = document.getElementById("nik").value.trim();
+        const instansi = document.getElementById("instansi").value.trim();
+        const kupon = document.getElementById("kupon").value.trim();
+
+        if (editIndex === null && pesertaList.some(p => p.nik === nik)) {
+            alert("NIK sudah terdaftar!");
+            return;
+        }
+
+        const dataPeserta = { nama, alamat, nik, instansi, kupon };
+
+        if (editIndex !== null) {
+            pesertaList[editIndex] = dataPeserta;
+            editIndex = null;
+        } else {
+            pesertaList.push(dataPeserta);
+        }
+
+        localStorage.setItem("pesertaList", JSON.stringify(pesertaList));
+        form.reset();
+        renderTable();
+    });
+
+    function editPeserta(index) {
+        const peserta = pesertaList[index];
+        document.getElementById("nama").value = peserta.nama;
+        document.getElementById("alamat").value = peserta.alamat;
+        document.getElementById("nik").value = peserta.nik;
+        document.getElementById("instansi").value = peserta.instansi;
+        document.getElementById("kupon").value = peserta.kupon;
+        editIndex = index;
+    }
+
+    function hapusPeserta(index) {
+        if (confirm("Yakin ingin menghapus peserta ini?")) {
+            pesertaList.splice(index, 1);
+            localStorage.setItem("pesertaList", JSON.stringify(pesertaList));
+            renderTable();
+        }
+    }
+
+    document.getElementById("exportBtn").addEventListener("click", function () {
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1 - Tabel lengkap
+        const wsFull = XLSX.utils.json_to_sheet(pesertaList);
+        XLSX.utils.book_append_sheet(wb, wsFull, "Data Lengkap");
+
+        // Sheet 2-6 - Masing-masing kolom
+        const wsNama = XLSX.utils.aoa_to_sheet([["Nama"], ...pesertaList.map(p => [p.nama])]);
+        XLSX.utils.book_append_sheet(wb, wsNama, "Nama");
+
+        const wsAlamat = XLSX.utils.aoa_to_sheet([["Alamat"], ...pesertaList.map(p => [p.alamat])]);
+        XLSX.utils.book_append_sheet(wb, wsAlamat, "Alamat");
+
+        const wsNIK = XLSX.utils.aoa_to_sheet([["NIK"], ...pesertaList.map(p => [p.nik])]);
+        XLSX.utils.book_append_sheet(wb, wsNIK, "NIK");
+
+        const wsInstansi = XLSX.utils.aoa_to_sheet([["Instansi"], ...pesertaList.map(p => [p.instansi])]);
+        XLSX.utils.book_append_sheet(wb, wsInstansi, "Instansi");
+
+        const wsKupon = XLSX.utils.aoa_to_sheet([["Kupon"], ...pesertaList.map(p => [p.kupon])]);
+        XLSX.utils.book_append_sheet(wb, wsKupon, "Kupon");
+
+        XLSX.writeFile(wb, "daftar_peserta_jalan_sehat.xlsx");
+    });
+
+    renderTable();
+</script>
+
+</body>
+</html>
