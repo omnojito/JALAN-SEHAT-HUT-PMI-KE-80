@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pendaftaran Peserta</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body { font-family: Arial; max-width: 800px; margin: auto; }
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #eee; }
+</style>
+</head>
+<body>
+
+<h2>Pendaftaran Peserta Jalan Sehat</h2>
+
+<form id="formPeserta">
+  <input type="text" id="nama" placeholder="Nama" required>
+  <input type="text" id="alamat" placeholder="Alamat" required>
+  <input type="text" id="nik" placeholder="NIK" required>
+  <input type="text" id="instansi" placeholder="Instansi" required>
+  <input type="text" id="kupon" placeholder="Nomor Kupon" required>
+  <button type="submit">Tambah Peserta</button>
+</form>
+
+<button id="exportExcel">Export ke Excel</button>
+
+<table id="tabelPeserta">
+  <thead>
+    <tr>
+      <th>Nama</th>
+      <th>Alamat</th>
+      <th>NIK</th>
+      <th>Instansi</th>
+      <th>Kupon</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const API_URL = "PASTE_URL_WEB_APP_DISINI"; // Ganti dengan URL Web App dari Google Apps Script
+
+async function loadPeserta() {
+  const res = await fetch(API_URL);
+  const data = await res.json();
+  const tbody = document.querySelector("#tabelPeserta tbody");
+  tbody.innerHTML = "";
+  data.forEach(p => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p.nama}</td><td>${p.alamat}</td><td>${p.nik}</td><td>${p.instansi}</td><td>${p.kupon}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById("formPeserta").addEventListener("submit", async e => {
+  e.preventDefault();
+  const peserta = {
+    nama: document.getElementById("nama").value,
+    alamat: document.getElementById("alamat").value,
+    nik: document.getElementById("nik").value,
+    instansi: document.getElementById("instansi").value,
+    kupon: document.getElementById("kupon").value
+  };
+
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(peserta)
+  });
+
+  e.target.reset();
+  loadPeserta();
+});
+
+document.getElementById("exportExcel").addEventListener("click", async () => {
+  const res = await fetch(API_URL);
+  const data = await res.json();
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Peserta");
+  XLSX.writeFile(wb, "daftar_peserta.xlsx");
+});
+
+loadPeserta();
+</script>
+
+</body>
+</html>
