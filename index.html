@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Peserta Jalan Sehat</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Pendaftaran Peserta Jalan Sehat</h1>
+        <form id="formPeserta">
+            <input type="text" id="nama" placeholder="Nama" required>
+            <input type="text" id="alamat" placeholder="Alamat" required>
+            <input type="text" id="nik" placeholder="Nomor Induk Kependudukan" required>
+            <input type="text" id="instansi" placeholder="Asal Instansi" required>
+            <input type="number" id="kupon" placeholder="Jumlah Kupon" required>
+            <button type="submit">Daftar</button>
+        </form>
+
+        <button id="exportExcel">Export ke Excel</button>
+
+        <table id="tabelPeserta">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Alamat</th>
+                    <th>NIK</th>
+                    <th>Asal Instansi</th>
+                    <th>Jumlah Kupon</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
