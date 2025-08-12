@@ -4,38 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pendaftaran Peserta Jalan Sehat</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; background: #f4f4f4; padding: 20px; }
+        h2 { text-align: center; }
+        .form-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
+        button { margin-top: 15px; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-export { background: #007bff; color: white; }
+        .btn-edit { background: #ffc107; color: black; }
+        .btn-delete { background: #dc3545; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background: #007bff; color: white; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Pendaftaran Peserta Jalan Sehat</h1>
-        <form id="formPeserta">
-            <input type="text" id="nama" placeholder="Nama" required>
-            <input type="text" id="alamat" placeholder="Alamat" required>
-            <input type="text" id="nik" placeholder="Nomor Induk Kependudukan" required>
-            <input type="text" id="instansi" placeholder="Asal Instansi" required>
-            <input type="number" id="kupon" placeholder="Jumlah Kupon" required>
-            <button type="submit">Daftar</button>
-        </form>
+    <h2>Form Pendaftaran Peserta Jalan Sehat</h2>
+    <div class="form-container">
+        <label>Nama:</label>
+        <input type="text" id="nama">
 
-        <button id="exportExcel">Export ke Excel</button>
+        <label>Alamat:</label>
+        <input type="text" id="alamat">
 
-        <table id="tabelPeserta">
-            <thead>
-                <tr>
-                    <th>Nama</th>
-                    <th>Alamat</th>
-                    <th>NIK</th>
-                    <th>Asal Instansi</th>
-                    <th>Jumlah Kupon</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <label>NIK:</label>
+        <input type="text" id="nik">
+
+        <label>Asal Instansi:</label>
+        <input type="text" id="instansi">
+
+        <label>Jumlah Kupon:</label>
+        <input type="number" id="kupon" min="1">
+
+        <button class="btn-save" onclick="simpanData()">Simpan</button>
+        <button class="btn-export" onclick="exportExcel()">Export ke Excel</button>
     </div>
 
-    <script src="script.js"></script>
+    <table id="tabelPeserta">
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>Alamat</th>
+                <th>NIK</th>
+                <th>Instansi</th>
+                <th>Kupon</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        let peserta = JSON.parse(localStorage.getItem("peserta")) || [];
+
+        function renderTable() {
+            let tbody = document.querySelector("#tabelPeserta tbody");
+            tbody.innerHTML = "";
+            peserta.forEach((p, index) => {
+                let row = `<tr>
+                    <td>${p.nama}</td>
+                    <td>${p.alamat}</td>
+                    <td>${p.nik}</td>
+                    <td>${p.instansi}</td>
+                    <td>${p.kupon}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editData(${index})">Edit</button>
+                        <button class="btn-delete" onclick="hapusData(${index})">Hapus</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function simpanData() {
+            let nama = document.getElementById("nama").value.trim();
+            let alamat = document.getElementById("alamat").value.trim();
+            let nik = document.getElementById("nik").value.trim();
+            let instansi = document.getElementById("instansi").value.trim();
+            let kupon = document.getElementById("kupon").value.trim();
+
+            if (!nama || !alamat || !nik || !instansi || !kupon) {
+                alert("Semua field wajib diisi!");
+                return;
+            }
+
+            if (peserta.some(p => p.nik === nik)) {
+                alert("NIK sudah terdaftar!");
+                return;
+            }
+
+            peserta.push({ nama, alamat, nik, instansi, kupon });
+            localStorage.setItem("peserta", JSON.stringify(peserta));
+            renderTable();
+            clearForm();
+        }
+
+        function editData(index) {
+            let p = peserta[index];
+            document.getElementById("nama").value = p.nama;
+            document.getElementById("alamat").value = p.alamat;
+            document.getElementById("nik").value = p.nik;
+            document.getElementById("instansi").value = p.instansi;
+            document.getElementById("kupon").value = p.kupon;
+            hapusData(index);
+        }
+
+        function hapusData(index) {
+            peserta.splice(index, 1);
+            localStorage.setItem("peserta", JSON.stringify(peserta));
+            renderTable();
+        }
+
+        function clearForm() {
+            document.getElementById("nama").value = "";
+            document.getElementById("alamat").value = "";
+            document.getElementById("nik").value = "";
+            document.getElementById("instansi").value = "";
+            document.getElementById("kupon").value = "";
+        }
+
+        function exportExcel() {
+            let csv = "Nama,Alamat,NIK,Instansi,Kupon\n";
+            peserta.forEach(p => {
+                csv += `${p.nama},${p.alamat},${p.nik},${p.instansi},${p.kupon}\n`;
+            });
+            let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "peserta_jalan_sehat.csv";
+            link.click();
+        }
+
+        renderTable();
+    </script>
 </body>
 </html>
